@@ -1,2 +1,3 @@
 ﻿  pg3render.cxx
-  PG3Render.vcxproj -> D:\MSc Computer Science\3rd Semester\Computer Graphics III\Assignments\PG3Render-2014\Debug\PG3Render.exe
+pg3render.obj : error LNK2001: unresolved external symbol "public: static class Rng AreaLight::mRng" (?mRng@AreaLight@@2VRng@@A)
+D:\MSc Computer Science\3rd Semester\Computer Graphics III\Assignments\PG3Render-2014\Debug\PG3Render.exe : fatal error LNK1120: 1 unresolved externals

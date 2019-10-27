@@ -3,6 +3,7 @@
 #include <vector>
 #include <cmath>
 #include "math.hxx"
+#include "rng.hxx"
 
 class AbstractLight
 {
@@ -13,6 +14,7 @@ public:
 		return Vec3f(0);
 	}
 };
+
 
 //////////////////////////////////////////////////////////////////////////
 class AreaLight : public AbstractLight
@@ -33,6 +35,43 @@ public:
         mInvArea     = 2.f / len;
         mFrame.SetFromZ(normal);
     }
+
+	virtual Vec3f sampleIllumination(
+		const Vec3f& aSurfPt,
+		const Frame& aFrame,
+		Vec3f& oWig,
+		float& oLightDist) const
+	{
+		// get random x and y coordinate
+		Rng randomCoordinateGenerator;
+		float areaX = randomCoordinateGenerator.GetFloat();
+		float areaY = randomCoordinateGenerator.GetFloat();
+
+		// make sure point (x,y) will lie inside the area
+		if (areaX + areaY >= 1)
+		{
+			areaX = 1 - areaX;
+			areaY = 1 - areaY;
+		}
+
+		// sample the point on the area
+		Vec3f sampledPoint = p0 + (areaX * e1) + (areaY * e2);
+
+		oWig = sampledPoint - aSurfPt; // distance from "light point" to surface point
+		float distSqr = oWig.LenSqr(); // distance squared
+		oLightDist = sqrt(distSqr);
+
+		oWig /= oLightDist;
+
+		float cosThetaX = Dot(aFrame.mZ, oWig);
+		float cosThetaY = Dot(mFrame.mZ, -oWig);
+
+		if (cosThetaX <= 0)
+			return Vec3f(0);
+
+		return mRadiance * (cosThetaX * cosThetaY) / (distSqr * mInvArea);
+		
+	}
 
 public:
     Vec3f p0, e1, e2;
@@ -87,7 +126,35 @@ public:
         mBackgroundColor = Vec3f(135, 206, 250) / Vec3f(255.f);
     }
 
-public:
+	virtual Vec3f sampleIllumination(
+		const Vec3f& aSurfPt,
+		const Frame& aFrame,
+		Vec3f& oWig,
+		float& oLightDist) const 
+	{
+		// find random point on sphere
+		Rng randomGenerator;
+		Vec3f randomPointOnSphere = randomGenerator.GetVec3f();
 
+		// sample point on surface
+		// by using rational form of sphere
+		Vec3f sampledPoint = Vec3f(cos(2 * PI_F * randomPointOnSphere.y) * sqrt(1 - (randomPointOnSphere.x * randomPointOnSphere.x)),
+			sin(2 * PI_F*randomPointOnSphere.y)*sqrt(1 - (randomPointOnSphere.x * randomPointOnSphere.x)),
+			randomPointOnSphere.x);
+
+		oWig = Normalize(aFrame.ToWorld(sampledPoint));
+
+		// set distance incredibly high
+		oLightDist = std::numeric_limits<float>::max();
+
+		float cosTheta = Dot(aFrame.mZ, oWig);
+
+		if (cosTheta <= 0)
+			return Vec3f(0);
+
+		return mBackgroundColor * cosTheta * (2 * PI_F);
+	}
+
+public:
     Vec3f mBackgroundColor;
 };
