@@ -4,6 +4,7 @@
 #include <cmath>
 #include "math.hxx"
 #include "rng.hxx"
+#include "utils.hxx"
 
 class AbstractLight
 {
@@ -11,6 +12,10 @@ public:
 
 	virtual Vec3f sampleIllumination(const Vec3f& aSurfPt, const Frame& aFrame, Vec3f& oWig, float& oLightDist) const
 	{
+		return Vec3f(0);
+	}
+
+	virtual Vec3f getLe() const {
 		return Vec3f(0);
 	}
 };
@@ -36,6 +41,11 @@ public:
         mFrame.SetFromZ(normal);
     }
 
+	virtual Vec3f getLe() const
+	{
+		return mRadiance;
+	}
+
 	virtual Vec3f sampleIllumination(
 		const Vec3f& aSurfPt,
 		const Frame& aFrame,
@@ -43,11 +53,10 @@ public:
 		float& oLightDist) const
 	{
 		// get random x and y coordinate
-		Rng randomCoordinateGenerator;
-		float areaX = randomCoordinateGenerator.GetFloat();
-		float areaY = randomCoordinateGenerator.GetFloat();
+		float areaX = rndGenerator.GetFloat();
+		float areaY = rndGenerator.GetFloat();
 
-		// make sure point (x,y) will lie inside the area
+		// make sure point (x,y) will lie inside the area light 
 		if (areaX + areaY >= 1)
 		{
 			areaX = 1 - areaX;
@@ -63,8 +72,8 @@ public:
 
 		oWig /= oLightDist;
 
-		float cosThetaX = Dot(aFrame.mZ, oWig);
-		float cosThetaY = Dot(mFrame.mZ, -oWig);
+		float cosThetaX = Dot(aFrame.mZ, oWig); // at surface point
+		float cosThetaY = Dot(mFrame.mZ, -oWig); // at light source
 
 		if (cosThetaX <= 0)
 			return Vec3f(0);
@@ -78,6 +87,7 @@ public:
     Frame mFrame;
     Vec3f mRadiance;
     float mInvArea;
+	static thread_local Rng rndGenerator;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -126,6 +136,12 @@ public:
         mBackgroundColor = Vec3f(135, 206, 250) / Vec3f(255.f);
     }
 
+	virtual Vec3f getLe() const
+	{
+		return mBackgroundColor;
+	}
+
+
 	virtual Vec3f sampleIllumination(
 		const Vec3f& aSurfPt,
 		const Frame& aFrame,
@@ -133,8 +149,7 @@ public:
 		float& oLightDist) const 
 	{
 		// find random point on sphere
-		Rng randomGenerator;
-		Vec3f randomPointOnSphere = randomGenerator.GetVec3f();
+		Vec3f randomPointOnSphere = rndGenerator.GetVec3f();
 
 		// sample point on surface
 		// by using rational form of sphere
@@ -157,4 +172,9 @@ public:
 
 public:
     Vec3f mBackgroundColor;
+	static thread_local Rng rndGenerator;
 };
+
+// initialize the random generator with system time (stolen from Luis Sanchez)
+thread_local Rng AreaLight::rndGenerator(static_cast<int>(time(nullptr)));
+thread_local Rng BackgroundLight::rndGenerator(static_cast<int>(time(nullptr)));
