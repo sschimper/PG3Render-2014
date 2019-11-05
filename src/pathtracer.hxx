@@ -48,6 +48,19 @@ public:
 				Vec3f LoDirect = Vec3f(0);
 				const Material& mat = mScene.GetMaterial( isect.matID );
 
+				// making light source visible in final rendered image
+				if (isect.lightID >= 0)
+				{
+					const AbstractLight *abstLight = mScene.GetLightPtr(isect.lightID);
+					const AreaLight *areaLight = dynamic_cast<const AreaLight*>(abstLight);
+
+					if (areaLight != 0)
+					{
+						mFramebuffer.AddColor(sample, areaLight->mRadiance);
+						continue;
+					}
+				}
+
 				for(int i=0; i<mScene.GetLightCount(); i++)
 				{
 					const AbstractLight* light = mScene.GetLightPtr(i);
@@ -55,15 +68,15 @@ public:
 
 					Vec3f wig; float lightDist;
 					Vec3f illum = light->sampleIllumination(surfPt, frame, wig, lightDist);
-					
+
 					if(illum.Max() > 0)
 					{
 						if( ! mScene.Occluded(surfPt, wig, lightDist) )
 							LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol);
 					}
-				}
 
-				mFramebuffer.AddColor(sample, LoDirect);
+					mFramebuffer.AddColor(sample, LoDirect);
+				}
 
 				/*
                 float dotLN = Dot(isect.normal, -ray.dir);

@@ -15,7 +15,7 @@ public:
 		return Vec3f(0);
 	}
 
-	virtual Vec3f getLe() const {
+	virtual Vec3f getRadiance() const {
 		return Vec3f(0);
 	}
 };
@@ -41,7 +41,7 @@ public:
         mFrame.SetFromZ(normal);
     }
 
-	virtual Vec3f getLe() const
+	virtual Vec3f getRadiance() const
 	{
 		return mRadiance;
 	}
@@ -64,7 +64,7 @@ public:
 		}
 
 		// sample the point on the area
-		Vec3f sampledPoint = p0 + (areaX * e1) + (areaY * e2);
+		Vec3f sampledPoint = p0 + (areaX * e1) + (areaY * e2);	
 
 		oWig = sampledPoint - aSurfPt; // distance from "light point" to surface point
 		float distSqr = oWig.LenSqr(); // distance squared
@@ -136,7 +136,7 @@ public:
         mBackgroundColor = Vec3f(135, 206, 250) / Vec3f(255.f);
     }
 
-	virtual Vec3f getLe() const
+	virtual Vec3f getRadiance() const
 	{
 		return mBackgroundColor;
 	}
