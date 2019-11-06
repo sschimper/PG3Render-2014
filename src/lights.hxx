@@ -10,7 +10,7 @@ class AbstractLight
 {
 public:
 
-	virtual Vec3f sampleIllumination(const Vec3f& aSurfPt, const Frame& aFrame, Vec3f& oWig, float& oLightDist) const
+	virtual Vec3f sampleIllumination(const Vec2f rndGen, const Vec3f& aSurfPt, const Frame& aFrame, Vec3f& oWig, float& oLightDist) const
 	{
 		return Vec3f(0);
 	}
@@ -47,14 +47,15 @@ public:
 	}
 
 	virtual Vec3f sampleIllumination(
+		const Vec2f rndGen,
 		const Vec3f& aSurfPt,
 		const Frame& aFrame,
 		Vec3f& oWig,
 		float& oLightDist) const
 	{
 		// get random x and y coordinate
-		float areaX = rndGenerator.GetFloat();
-		float areaY = rndGenerator.GetFloat();
+		float areaX = rndGen.x;
+		float areaY = rndGen.y;
 
 		// make sure point (x,y) will lie inside the area light 
 		if (areaX + areaY >= 1)
@@ -101,6 +102,7 @@ public:
     }
 
 	virtual Vec3f sampleIllumination(
+		const Vec2f rndGen,
 		const Vec3f& aSurfPt, 
 		const Frame& aFrame, 
 		Vec3f& oWig, 
@@ -143,6 +145,7 @@ public:
 
 
 	virtual Vec3f sampleIllumination(
+		const Vec2f rndGen,
 		const Vec3f& aSurfPt,
 		const Frame& aFrame,
 		Vec3f& oWig,
@@ -174,7 +177,3 @@ public:
     Vec3f mBackgroundColor;
 	static thread_local Rng rndGenerator;
 };
-
-// initialize the random generator with system time (stolen from Luis Sanchez)
-thread_local Rng AreaLight::rndGenerator(static_cast<int>(time(nullptr)));
-thread_local Rng BackgroundLight::rndGenerator(static_cast<int>(time(nullptr)));
