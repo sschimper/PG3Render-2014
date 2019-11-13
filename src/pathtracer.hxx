@@ -65,7 +65,7 @@ public:
 					assert(light != 0);
 
 					Vec3f wig; float lightDist;
-					Vec3f illum = light->sampleIllumination(mRng.GetVec2f(), surfPt, frame, wig, lightDist);
+					Vec3f illum = light->sampleIllumination(mRng.GetVec3f(), surfPt, frame, wig, lightDist); // debug
 
 					if (illum.Max() > 0)
 					{

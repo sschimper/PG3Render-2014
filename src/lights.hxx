@@ -10,7 +10,7 @@ class AbstractLight
 {
 public:
 
-	virtual Vec3f sampleIllumination(const Vec2f rndGen, const Vec3f& aSurfPt, const Frame& aFrame, Vec3f& oWig, float& oLightDist) const
+	virtual Vec3f sampleIllumination(const Vec3f rndGen, const Vec3f& aSurfPt, const Frame& aFrame, Vec3f& oWig, float& oLightDist) const
 	{
 		return Vec3f(0);
 	}
@@ -47,7 +47,7 @@ public:
 	}
 
 	virtual Vec3f sampleIllumination(
-		const Vec2f rndGen,
+		const Vec3f rndGen, 
 		const Vec3f& aSurfPt,
 		const Frame& aFrame,
 		Vec3f& oWig,
@@ -102,7 +102,7 @@ public:
     }
 
 	virtual Vec3f sampleIllumination(
-		const Vec2f rndGen,
+		const Vec3f rndGen, 
 		const Vec3f& aSurfPt, 
 		const Frame& aFrame, 
 		Vec3f& oWig, 
@@ -133,10 +133,10 @@ public:
 class BackgroundLight : public AbstractLight
 {
 public:
-    BackgroundLight()
-    {
-        mBackgroundColor = Vec3f(135, 206, 250) / Vec3f(255.f);
-    }
+	BackgroundLight()
+	{
+		mBackgroundColor = Vec3f(135, 206, 250) / Vec3f(255.f);
+	}
 
 	virtual Vec3f getRadiance() const
 	{
@@ -145,14 +145,15 @@ public:
 
 
 	virtual Vec3f sampleIllumination(
-		const Vec2f rndGen,
+		const Vec3f rndGen, 
 		const Vec3f& aSurfPt,
 		const Frame& aFrame,
 		Vec3f& oWig,
-		float& oLightDist) const 
+		float& oLightDist) const
 	{
 		// find random point on sphere
-		Vec3f randomPointOnSphere = rndGenerator.GetVec3f();
+		// Vec3f randomPointOnSphere = rndGenerator.GetVec3f();
+		Vec3f randomPointOnSphere = Vec3f(rndGen.x, rndGen.y, rndGen.z);
 
 		// sample point on surface
 		// by using rational form of sphere
@@ -174,6 +175,5 @@ public:
 	}
 
 public:
-    Vec3f mBackgroundColor;
-	static thread_local Rng rndGenerator;
+	Vec3f mBackgroundColor;
 };
