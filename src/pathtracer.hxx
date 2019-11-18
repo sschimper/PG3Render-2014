@@ -43,6 +43,7 @@ public:
 				const Vec3f surfPt = ray.org + ray.dir * isect.dist;
 				Frame frame;
 				frame.SetFromZ(isect.normal);
+				const Vec3f wog = -ray.dir;
 				const Vec3f wol = frame.ToLocal(-ray.dir);
 
 				Vec3f LoDirect = Vec3f(0);
@@ -59,7 +60,8 @@ public:
 					}
 				}
 
-				for (int i = 0; i < mScene.GetLightCount(); i++)
+				/* ASSIGNMENT 1
+				for (int i = 0; i < mScene.GetLightCount(); i++) // comment this out for Assignment II
 				{
 					const AbstractLight* light = mScene.GetLightPtr(i);
 					assert(light != 0);
@@ -73,8 +75,46 @@ public:
 							LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol);
 					}
 				}
+				*/
 
-				mFramebuffer.AddColor(sample, LoDirect);
+				// set up for second ray
+				Vec3f normal = Normalize(isect.normal); // normal at intersection point
+				Vec3f genDir; // generated direction
+				Ray secondRay; // second Ray
+				Isect secondRayIsect; // second intersection
+				float ps;
+				float pd;
+
+				// generate new direction
+				createSecondRay(mat, genDir, secondRay, secondRayIsect, frame, wog, surfPt, normal, pd, ps);
+
+				// evaluate Pdf
+				float pdf = pd * mat.getPDFDiffuseValue(genDir, normal)
+					+ ps * mat.getPDFGlossyValue(wog, normal, genDir);
+
+				// if the ray hits a light source, ask the light to give the radiance ...
+				if (mScene.Intersect(secondRay, secondRayIsect)) 
+				{
+					// works only for area light because it is mathematically 
+					// impossible to hit a point that is infinitely small
+					if (secondRayIsect.lightID >= 0) 
+					{
+						const AbstractLight *abstLight = mScene.GetLightPtr(secondRayIsect.lightID);
+						float cosTheta = Dot(normal, genDir);
+
+						LoDirect += (abstLight->getRadiance() * mat.evalBrdf(frame.ToLocal(genDir), wol) * cosTheta) / pdf;
+					}
+				}
+				// ... and if there is no light source in the scene -> background light
+				// ask the background light to give the radiance
+				else if (mScene.GetBackground()) {
+					Vec3f radiance = mScene.GetBackground()->mBackgroundColor;
+					float cosTheta = Dot(normal, genDir);
+					LoDirect += (radiance * mat.evalBrdf(frame.ToLocal(genDir), wol) * cosTheta) / pdf;
+				}
+
+				mFramebuffer.AddColor(sample, LoDirect); // finally add the information to the image
+
 
 				/*
 				float dotLN = Dot(isect.normal, -ray.dir);
@@ -91,6 +131,44 @@ public:
 		}
 
 		mIterations++;
+	}
+
+	// ASSIGNMENT 2
+	// select a BRDF component and create a new random direction
+	void createSecondRay(const Material & mat, 
+									Vec3f &genDir, 
+									Ray &secondRay,
+									Isect &secondRayIsect,
+									Frame &frame, 
+									Vec3f wog, 
+									Vec3f surfPt,
+									Vec3f &normal,
+									float &pd,
+									float &ps)
+	{
+		// generate new direction
+		pd = mat.getMaxElementInVector(mat.mDiffuseReflectance);
+		ps = mat.getMaxElementInVector(mat.mPhongReflectance);
+		float sumPdPs = (pd + ps);
+		pd /= sumPdPs;	 // prob of choosing the diffuse component
+		ps /= sumPdPs;	 // prob of choosing the specular comp.
+
+		float r1 = mRng.GetFloat();
+		float r2 = mRng.GetFloat();
+
+		if (mRng.GetFloat() <= pd) {
+			genDir = frame.ToWorld(mat.sampleDiffuse(r1, r2));
+		}
+		else {
+			genDir = mat.sampleGlossy(wog, normal, r1, r2);
+		}
+
+		// instantiate following ray
+		secondRay.dir = genDir;
+		secondRay.org = surfPt + genDir * EPS_RAY; // move it a bit in the generated dorection and cast ray
+		secondRay.tmin = 0;
+
+		secondRayIsect.dist = 1e36f; // distance from starting point to intersection 
 	}
 
 	Rng              mRng;

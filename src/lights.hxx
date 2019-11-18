@@ -79,6 +79,9 @@ public:
 		if (cosThetaX <= 0)
 			return Vec3f(0);
 
+		if (cosThetaY <= 0)
+			return Vec3f(0);
+
 		return mRadiance * (cosThetaX * cosThetaY) / (distSqr * mInvArea);
 		
 	}

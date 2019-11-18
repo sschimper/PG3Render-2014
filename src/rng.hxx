@@ -16,8 +16,8 @@
 class Rng
 {
 public:
-    Rng(int aSeed = 1234):
-        mRng(aSeed)
+	Rng(int aSeed = 1234) :
+		mRng(aSeed), mDistFloat(0.0,1.0) // debug
     {}
 
     int GetInt()
@@ -34,6 +34,19 @@ public:
     {
         return mDistFloat(mRng);
     }
+
+	/*
+	// get a uniformly random float btw 0 and 1
+	float GetFloatBetweenZeoAndOne() const
+	{
+		
+		std::random_device                  rand_device;
+		std::mt19937                        generator(rand_device());
+		
+
+		return distr(generator);
+	}
+	*/
 
     Vec2f GetVec2f()
     {
