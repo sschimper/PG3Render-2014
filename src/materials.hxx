@@ -18,6 +18,23 @@ public:
         mPhongExponent      = 1.f;
     }
 
+	// function that returns the maximum component in a vector
+	float getMaxElementInVector(Vec3f vector) const
+	{
+		float x = vector.x;
+		float y = vector.y;
+		float z = vector.z;
+
+		float coordinates[] = { x,y,z };
+		float max = coordinates[0];
+
+		for (int i = 1; i < 3; i++) {
+			if (coordinates[i] >= max)
+				max = coordinates[i];
+		}
+		return max;
+	}
+
 	// generate random ray direction on hemisphere
 	Vec3f sampleDiffuse(float &r1, float &r2) const
 	{
@@ -31,6 +48,7 @@ public:
 		return dir;
 	}
 
+	// create random direction on "glossy" lobe
 	Vec3f sampleGlossy(const Vec3f& wog, Vec3f normal, float &r1, float &r2) const
 	{
 		Vec3f idealReflected = 2 * Dot(wog, normal) * normal - wog; // ideal reflected direction
@@ -87,6 +105,19 @@ public:
 		return diffuseComponent + glossyComponent;
 	}
 
+	// selection of the BRDF component
+	float evalBrdfPdf(Vec3f wog, Vec3f genDir, Vec3f normal) const
+	{
+		float pd = getMaxElementInVector(mDiffuseReflectance);
+		float ps = getMaxElementInVector(mPhongReflectance);
+		float sumPdPs = (pd + ps);
+		pd /= sumPdPs;	 // prob of choosing the diffuse component
+		ps /= sumPdPs;	 // prob of choosing the specular comp.
+
+		return pd * getPDFDiffuseValue(genDir, normal) + ps * getPDFGlossyValue(wog, normal, genDir);
+
+	}
+
 	// calculate cos theta
 	float calculateCosTheta(const Vec3f & wil, const Vec3f & wol) const
 	{
@@ -94,24 +125,6 @@ public:
 		Vec3f reflection = 2 * Dot(wil, normal) * normal - wil;
 		float this_cos_theta = Dot(reflection, wol);
 		return this_cos_theta;
-	}
-
-	
-	// function that returns the maximum component in a vector
-	float getMaxElementInVector(Vec3f vector) const {
-		float x = vector.x;
-		float y = vector.y;
-		float z = vector.z;
-
-		float coordinates[] = { x,y,z };
-		float max = coordinates[0];
-
-		for (int i = 1; i < 3; i++) {
-			if (coordinates[i] >= max)
-				max = coordinates[i];
-		}
-
-		return max;
 	}
 
     Vec3f mDiffuseReflectance;

@@ -15,8 +15,14 @@ public:
 		return Vec3f(0);
 	}
 
-	virtual Vec3f getRadiance() const {
+	virtual Vec3f getRadiance() const 
+	{
 		return Vec3f(0);
+	}
+
+	virtual float getPDF(float lightDist, Vec3f wig) const
+	{
+		return 0;
 	}
 };
 
@@ -83,7 +89,12 @@ public:
 			return Vec3f(0);
 
 		return mRadiance * (cosThetaX * cosThetaY) / (distSqr * mInvArea);
-		
+	}
+
+	virtual float getPDF(float lightDist, Vec3f wig) const
+	{
+		float cosine = Dot(mFrame.mZ, -wig);
+		return (lightDist * lightDist) * mInvArea / cosine;
 	}
 
 public:
@@ -123,6 +134,11 @@ public:
 			return Vec3f(0);
 
 		return mIntensity * cosTheta / distSqr;
+	}
+
+	virtual float getPDF(float lightDist, Vec3f wig) const
+	{
+		return 1;
 	}
 
 public:
@@ -175,6 +191,11 @@ public:
 			return Vec3f(0);
 
 		return mBackgroundColor * cosTheta * (2 * PI_F);
+	}
+
+	virtual float getPDF(float lightDist, Vec3f wig) const
+	{
+		return (1 / 4 * PI_F);
 	}
 
 public:

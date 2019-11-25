@@ -60,22 +60,58 @@ public:
 					}
 				}
 
-				/* ASSIGNMENT 1
-				for (int i = 0; i < mScene.GetLightCount(); i++) // comment this out for Assignment II
+				// initialize variables for the prob of light sampling or brdf sampling
+				float lightSamplingPdfLight;
+				float lightSamplingPdfBrdf;
+				float brdfSamplingPdfLight;
+				float brdfSamplingPdfBrdf;
+
+				//////////////////////////////////////////////
+				//			Area Light Sampling				//
+				//////////////////////////////////////////////
+
+				// ASSIGNMENT 1
+				for (int i = 0; i < mScene.GetLightCount(); i++) 
 				{
 					const AbstractLight* light = mScene.GetLightPtr(i);
 					assert(light != 0);
 
-					Vec3f wig; float lightDist;
+					Vec3f wig; 
+					float lightDist;
 					Vec3f illum = light->sampleIllumination(mRng.GetVec3f(), surfPt, frame, wig, lightDist); // debug
+
+					// if the scene is a "point light scene", always do
+					// light sampling
+					// set the probabilities accordingly
+					const PointLight* ptLight = dynamic_cast<const PointLight*>(light);
+					if (ptLight != nullptr) {
+						lightSamplingPdfLight = 1;
+						lightSamplingPdfBrdf = 0;
+					}
+					else {
+						lightSamplingPdfLight = light->getPDF(lightDist, wig);
+						lightSamplingPdfBrdf = mat.evalBrdfPdf(wog, wig, frame.Normal());
+					}
+
+					// get the weights
+					float weightLightSampling = getBalanceHeuristic(lightSamplingPdfLight, lightSamplingPdfBrdf);
 
 					if (illum.Max() > 0)
 					{
 						if (!mScene.Occluded(surfPt, wig, lightDist))
-							LoDirect += illum * mat.evalBrdf(frame.ToLocal(wig), wol);
+							LoDirect += (illum * mat.evalBrdf(frame.ToLocal(wig), wol) * weightLightSampling); // multiply expression by weight 
 					}
 				}
-				*/
+
+				//////////////////////////////////////////////
+				//			Area Light Sampling	 end		//
+				//////////////////////////////////////////////
+
+				//////////////////////////////////////////////
+				//				BRDF Sampling				//
+				//////////////////////////////////////////////
+				
+				// ASSIGNMENT 2
 
 				// set up for second ray
 				Vec3f normal = Normalize(isect.normal); // normal at intersection point
@@ -99,10 +135,21 @@ public:
 					// impossible to hit a point that is infinitely small
 					if (secondRayIsect.lightID >= 0) 
 					{
+						// set up light source
 						const AbstractLight *abstLight = mScene.GetLightPtr(secondRayIsect.lightID);
-						float cosTheta = Dot(normal, genDir);
 
-						LoDirect += (abstLight->getRadiance() * mat.evalBrdf(frame.ToLocal(genDir), wol) * cosTheta) / pdf;
+						// set probabilities
+						brdfSamplingPdfLight = abstLight->getPDF(secondRayIsect.dist, genDir);
+						brdfSamplingPdfBrdf = mat.evalBrdfPdf(wog, genDir, normal);
+
+						// calculate weight
+						float weightBRDFSampling = getBalanceHeuristic(brdfSamplingPdfBrdf, brdfSamplingPdfLight);
+
+						float cosTheta = Dot(normal, genDir);
+						if (cosTheta >= 0) 
+						{
+							LoDirect += (abstLight->getRadiance() * mat.evalBrdf(frame.ToLocal(genDir), wol) * cosTheta * weightBRDFSampling) / pdf;
+						}							
 					}
 				}
 				// ... and if there is no light source in the scene -> background light
@@ -113,8 +160,11 @@ public:
 					LoDirect += (radiance * mat.evalBrdf(frame.ToLocal(genDir), wol) * cosTheta) / pdf;
 				}
 
-				mFramebuffer.AddColor(sample, LoDirect); // finally add the information to the image
+				//////////////////////////////////////////////
+				//				BRDF Sampling end			//
+				//////////////////////////////////////////////
 
+				mFramebuffer.AddColor(sample, LoDirect); // finally add the information to the image
 
 				/*
 				float dotLN = Dot(isect.normal, -ray.dir);
@@ -169,6 +219,12 @@ public:
 		secondRay.tmin = 0;
 
 		secondRayIsect.dist = 1e36f; // distance from starting point to intersection 
+	}
+	
+	// get balance heuristic
+	float getBalanceHeuristic(float fPdf, float gPdf)
+	{
+		return (fPdf) / (fPdf + gPdf);
 	}
 
 	Rng              mRng;
