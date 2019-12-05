@@ -115,7 +115,6 @@ public:
 		ps /= sumPdPs;	 // prob of choosing the specular comp.
 
 		return pd * getPDFDiffuseValue(genDir, normal) + ps * getPDFGlossyValue(wog, normal, genDir);
-
 	}
 
 	// calculate cos theta

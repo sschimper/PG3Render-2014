@@ -94,6 +94,14 @@ public:
 	virtual float getPDF(float lightDist, Vec3f wig) const
 	{
 		float cosine = Dot(mFrame.mZ, -wig);
+		
+		// without this statement, light box would have unplausible 
+		// "light stipe" in the box
+		if (cosine < 0)
+		{
+			cosine = 0;
+		}
+		
 		return (lightDist * lightDist) * mInvArea / cosine;
 	}
 
@@ -102,7 +110,6 @@ public:
     Frame mFrame;
     Vec3f mRadiance;
     float mInvArea;
-	static thread_local Rng rndGenerator;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -171,7 +178,6 @@ public:
 		float& oLightDist) const
 	{
 		// find random point on sphere
-		// Vec3f randomPointOnSphere = rndGenerator.GetVec3f();
 		Vec3f randomPointOnSphere = Vec3f(rndGen.x, rndGen.y, rndGen.z);
 
 		// sample point on surface

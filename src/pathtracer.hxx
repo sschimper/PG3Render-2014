@@ -7,8 +7,6 @@
 #include "renderer.hxx"
 #include "rng.hxx"
 
-// Right now this is a copy of EyeLight renderer. The task is to change this 
-// to a full-fledged path tracer.
 class PathTracer : public AbstractRenderer
 {
 public:
@@ -35,48 +33,90 @@ public:
 			const Vec2f sample = Vec2f(float(x), float(y)) + mRng.GetVec2f();
 
 			Ray   ray = mScene.mCamera.GenerateRay(sample);
-			Isect isect;
-			isect.dist = 1e36f;
+			Vec3f LoDirect = Vec3f(0);
 
-			if (mScene.Intersect(ray, isect))
+			// set up variables for recursion
+			Vec3f thrput = (1.f, 1.f, 1.f);
+			bool firstIsec = true;
+			float pdfBrdf = 1;
+
+			Isect prevIsect;
+			Ray prevRay = ray;
+
+			while (true)
 			{
+				Isect isect;
+				isect.dist = 1e36f;
+
+				// if nothing was hit by the ray, get background light information
+				if (!mScene.Intersect(ray, isect))
+				{
+					if (mScene.GetBackground())
+					{
+						float pdfLightSampling = mScene.GetBackground()->getPDF(0, ray.dir);
+						float weightBRDFSampling = getBalanceHeuristic(pdfBrdf, pdfLightSampling);
+						Vec3f radiance = mScene.GetBackground()->mBackgroundColor;
+						LoDirect += radiance * weightBRDFSampling * thrput;
+					}
+					// return LoDirect;
+					break;
+				}
+
+				// if something is hit, get the mat info from intersection point
+				Vec3f normal = Normalize(isect.normal); 
 				const Vec3f surfPt = ray.org + ray.dir * isect.dist;
 				Frame frame;
 				frame.SetFromZ(isect.normal);
 				const Vec3f wog = -ray.dir;
 				const Vec3f wol = frame.ToLocal(-ray.dir);
-
-				Vec3f LoDirect = Vec3f(0);
 				const Material& mat = mScene.GetMaterial(isect.matID);
 
 				// if light source is intersected, add the light to the final image
-				if (isect.lightID >= 0) {
-					const AbstractLight *abstLight = mScene.GetLightPtr(isect.lightID);
-					const AreaLight *areaLight = dynamic_cast<const AreaLight*>(abstLight);
-
-					if (areaLight != 0) {
-						mFramebuffer.AddColor(sample, areaLight->mRadiance);
-						continue;
+				if (isect.lightID >= 0)
+				{
+					if (firstIsec)
+					{
+						const auto firstIsectLight = mScene.GetLightPtr(isect.lightID);
+						assert(firstIsectLight != 0);
+						LoDirect += thrput * firstIsectLight->getRadiance();
+						break;
 					}
+
+					const AbstractLight *abstLight = mScene.GetLightPtr(isect.lightID);
+					float pdfLightSampling = abstLight->getPDF(isect.dist, ray.dir);
+					float weightBRDFSampling;
+
+					if (firstIsec)
+					{
+						weightBRDFSampling = 1;
+					}
+					else
+					{
+						weightBRDFSampling = getBalanceHeuristic(pdfBrdf, pdfLightSampling);
+					}
+
+					float cosTheta = Dot(normal, ray.dir);
+					LoDirect += ((abstLight->getRadiance() * weightBRDFSampling)) * thrput;
+					break;
 				}
 
-				// initialize variables for the prob of light sampling or brdf sampling
-				float lightSamplingPdfLight;
-				float lightSamplingPdfBrdf;
-				float brdfSamplingPdfLight;
-				float brdfSamplingPdfBrdf;
+				firstIsec = false;
 
 				//////////////////////////////////////////////
 				//			Area Light Sampling				//
 				//////////////////////////////////////////////
 
+				// initialize variables for the prob of light sampling or brdf sampling
+				float lightSamplingPdfLight;
+				float lightSamplingPdfBrdf;
+
 				// ASSIGNMENT 1
-				for (int i = 0; i < mScene.GetLightCount(); i++) 
+				for (int i = 0; i < mScene.GetLightCount(); i++)
 				{
 					const AbstractLight* light = mScene.GetLightPtr(i);
 					assert(light != 0);
 
-					Vec3f wig; 
+					Vec3f wig;
 					float lightDist;
 					Vec3f illum = light->sampleIllumination(mRng.GetVec3f(), surfPt, frame, wig, lightDist); // debug
 
@@ -84,11 +124,13 @@ public:
 					// light sampling
 					// set the probabilities accordingly
 					const PointLight* ptLight = dynamic_cast<const PointLight*>(light);
-					if (ptLight != nullptr) {
+					if (ptLight != nullptr)
+					{
 						lightSamplingPdfLight = 1;
 						lightSamplingPdfBrdf = 0;
 					}
-					else {
+					else
+					{
 						lightSamplingPdfLight = light->getPDF(lightDist, wig);
 						lightSamplingPdfBrdf = mat.evalBrdfPdf(wog, wig, frame.Normal());
 					}
@@ -99,7 +141,9 @@ public:
 					if (illum.Max() > 0)
 					{
 						if (!mScene.Occluded(surfPt, wig, lightDist))
-							LoDirect += (illum * mat.evalBrdf(frame.ToLocal(wig), wol) * weightLightSampling); // multiply expression by weight 
+						{
+							LoDirect += (illum * mat.evalBrdf(frame.ToLocal(wig), wol) * weightLightSampling) * thrput;
+						}
 					}
 				}
 
@@ -110,11 +154,12 @@ public:
 				//////////////////////////////////////////////
 				//				BRDF Sampling				//
 				//////////////////////////////////////////////
-				
-				// ASSIGNMENT 2
+
+				// initialize variables for the prob of light sampling or brdf sampling
+				// float brdfSamplingPdfLight;
+				// float brdfSamplingPdfBrdf;
 
 				// set up for second ray
-				Vec3f normal = Normalize(isect.normal); // normal at intersection point
 				Vec3f genDir; // generated direction
 				Ray secondRay; // second Ray
 				Isect secondRayIsect; // second intersection
@@ -124,60 +169,55 @@ public:
 				// generate new direction
 				createSecondRay(mat, genDir, secondRay, secondRayIsect, frame, wog, surfPt, normal, pd, ps);
 
-				// evaluate Pdf
-				float pdf = pd * mat.getPDFDiffuseValue(genDir, normal)
-					+ ps * mat.getPDFGlossyValue(wog, normal, genDir);
-
-				// if the ray hits a light source, ask the light to give the radiance ...
-				if (mScene.Intersect(secondRay, secondRayIsect)) 
-				{
-					// works only for area light because it is mathematically 
-					// impossible to hit a point that is infinitely small
-					if (secondRayIsect.lightID >= 0) 
-					{
-						// set up light source
-						const AbstractLight *abstLight = mScene.GetLightPtr(secondRayIsect.lightID);
-
-						// set probabilities
-						brdfSamplingPdfLight = abstLight->getPDF(secondRayIsect.dist, genDir);
-						brdfSamplingPdfBrdf = mat.evalBrdfPdf(wog, genDir, normal);
-
-						// calculate weight
-						float weightBRDFSampling = getBalanceHeuristic(brdfSamplingPdfBrdf, brdfSamplingPdfLight);
-
-						float cosTheta = Dot(normal, genDir);
-						if (cosTheta >= 0) 
-						{
-							LoDirect += (abstLight->getRadiance() * mat.evalBrdf(frame.ToLocal(genDir), wol) * cosTheta * weightBRDFSampling) / pdf;
-						}							
-					}
-				}
-				// ... and if there is no light source in the scene -> background light
-				// ask the background light to give the radiance
-				else if (mScene.GetBackground()) {
-					Vec3f radiance = mScene.GetBackground()->mBackgroundColor;
-					float cosTheta = Dot(normal, genDir);
-					LoDirect += (radiance * mat.evalBrdf(frame.ToLocal(genDir), wol) * cosTheta) / pdf;
-				}
+				pdfBrdf = mat.evalBrdfPdf(wog, genDir, normal);
 
 				//////////////////////////////////////////////
 				//				BRDF Sampling end			//
 				//////////////////////////////////////////////
 
-				mFramebuffer.AddColor(sample, LoDirect); // finally add the information to the image
+				//////////////////////////////////////////////
+				//				RR and Continuing			//
+				//////////////////////////////////////////////
 
-				/*
-				float dotLN = Dot(isect.normal, -ray.dir);
-				// this illustrates how to pick-up the material properties of the intersected surface
-				const Material& mat = mScene.GetMaterial( isect.matID );
-				const Vec3f& rhoD = mat.mDiffuseReflectance;
-				// this illustrates how to pick-up the area source associated with the intersected surface
-				const AbstractLight *light = isect.lightID < 0 ?  0 : mScene.GetLightPtr( isect.lightID );
-				// we cannot do anything with the light because it has no interface right now
-				if(dotLN > 0)
-					mFramebuffer.AddColor(sample, (rhoD/PI_F) * Vec3f(dotLN));
-				*/
-			}
+				Vec3f thrputUpdate = 1 / pdfBrdf * mat.evalBrdf(frame.ToLocal(genDir), wol) * Dot(isect.normal, genDir);
+				float survivalProb = fmin(1.f, thrputUpdate.Max());
+
+				// russian roulette
+				if (mRng.GetFloat() < survivalProb)
+				{
+					thrput *= (thrputUpdate / survivalProb);
+
+					prevRay = ray;
+					ray.org = surfPt + genDir * EPS_RAY;
+					ray.dir = genDir;
+				}
+				else
+				{ 
+					// terminate path
+					break;
+				}
+
+				//////////////////////////////////////////////
+				//		RR and Continuing end				//
+				//////////////////////////////////////////////
+
+			} // end while loop
+
+			
+
+			mFramebuffer.AddColor(sample, LoDirect); // finally add the information to the image
+
+			/*
+			float dotLN = Dot(isect.normal, -ray.dir);
+			// this illustrates how to pick-up the material properties of the intersected surface
+			const Material& mat = mScene.GetMaterial( isect.matID );
+			const Vec3f& rhoD = mat.mDiffuseReflectance;
+			// this illustrates how to pick-up the area source associated with the intersected surface
+			const AbstractLight *light = isect.lightID < 0 ?  0 : mScene.GetLightPtr( isect.lightID );
+			// we cannot do anything with the light because it has no interface right now
+			if(dotLN > 0)
+				mFramebuffer.AddColor(sample, (rhoD/PI_F) * Vec3f(dotLN));
+			*/
 		}
 
 		mIterations++;
@@ -185,7 +225,7 @@ public:
 
 	// ASSIGNMENT 2
 	// select a BRDF component and create a new random direction
-	void createSecondRay(const Material & mat, 
+	void createSecondRay(const Material &mat, 
 									Vec3f &genDir, 
 									Ray &secondRay,
 									Isect &secondRayIsect,
@@ -197,7 +237,7 @@ public:
 									float &ps)
 	{
 		// generate new direction
-		pd = mat.getMaxElementInVector(mat.mDiffuseReflectance);
+		pd = mat.getMaxElementInVector(mat.mDiffuseReflectance); // Exception thrown: read access violation
 		ps = mat.getMaxElementInVector(mat.mPhongReflectance);
 		float sumPdPs = (pd + ps);
 		pd /= sumPdPs;	 // prob of choosing the diffuse component
@@ -206,19 +246,14 @@ public:
 		float r1 = mRng.GetFloat();
 		float r2 = mRng.GetFloat();
 
-		if (mRng.GetFloat() <= pd) {
+		if (mRng.GetFloat() <= pd) 
+		{
 			genDir = frame.ToWorld(mat.sampleDiffuse(r1, r2));
 		}
-		else {
+		else 
+		{
 			genDir = mat.sampleGlossy(wog, normal, r1, r2);
 		}
-
-		// instantiate following ray
-		secondRay.dir = genDir;
-		secondRay.org = surfPt + genDir * EPS_RAY; // move it a bit in the generated dorection and cast ray
-		secondRay.tmin = 0;
-
-		secondRayIsect.dist = 1e36f; // distance from starting point to intersection 
 	}
 	
 	// get balance heuristic
@@ -226,6 +261,8 @@ public:
 	{
 		return (fPdf) / (fPdf + gPdf);
 	}
+
+
 
 	Rng              mRng;
 };
