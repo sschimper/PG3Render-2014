@@ -31,14 +31,14 @@ public:
 			const int y = pixID / resX;
 
 			const Vec2f sample = Vec2f(float(x), float(y)) + mRng.GetVec2f();
-
 			Ray   ray = mScene.mCamera.GenerateRay(sample);
-			Vec3f LoDirect = Vec3f(0);
 
 			// set up variables for recursion
+			Vec3f LoDirect = Vec3f(0);
 			Vec3f thrput = (1.f, 1.f, 1.f);
-			bool firstIsec = true;
 			float pdfBrdf = 1;
+
+			bool firstIsec = true;
 
 			Isect prevIsect;
 			Ray prevRay = ray;
@@ -53,12 +53,12 @@ public:
 				{
 					if (mScene.GetBackground())
 					{
-						float pdfLightSampling = mScene.GetBackground()->getPDF(0, ray.dir);
+						// float pdfLightSampling = mScene.GetBackground()->getPDF(0, ray.dir);
+						float pdfLightSampling = mScene.GetBackground()->getPDF();
 						float weightBRDFSampling = getBalanceHeuristic(pdfBrdf, pdfLightSampling);
 						Vec3f radiance = mScene.GetBackground()->mBackgroundColor;
 						LoDirect += radiance * weightBRDFSampling * thrput;
 					}
-					// return LoDirect;
 					break;
 				}
 
@@ -74,6 +74,8 @@ public:
 				// if light source is intersected, add the light to the final image
 				if (isect.lightID >= 0)
 				{
+					// if the first ray hits the light source 
+					// calculate LoDirect and return
 					if (firstIsec)
 					{
 						const auto firstIsectLight = mScene.GetLightPtr(isect.lightID);
@@ -85,22 +87,17 @@ public:
 					const AbstractLight *abstLight = mScene.GetLightPtr(isect.lightID);
 					float pdfLightSampling = abstLight->getPDF(isect.dist, ray.dir);
 					float weightBRDFSampling;
-
-					if (firstIsec)
-					{
-						weightBRDFSampling = 1;
-					}
-					else
-					{
-						weightBRDFSampling = getBalanceHeuristic(pdfBrdf, pdfLightSampling);
-					}
+					weightBRDFSampling = getBalanceHeuristic(pdfBrdf, pdfLightSampling); 
 
 					float cosTheta = Dot(normal, ray.dir);
 					LoDirect += ((abstLight->getRadiance() * weightBRDFSampling)) * thrput;
 					break;
 				}
 
-				firstIsec = false;
+				if (firstIsec)
+				{
+					firstIsec = false;
+				}
 
 				//////////////////////////////////////////////
 				//			Area Light Sampling				//
@@ -155,20 +152,19 @@ public:
 				//				BRDF Sampling				//
 				//////////////////////////////////////////////
 
-				// initialize variables for the prob of light sampling or brdf sampling
-				// float brdfSamplingPdfLight;
-				// float brdfSamplingPdfBrdf;
+				// initialize variables for the probability of light sampling or brdf sampling
 
 				// set up for second ray
 				Vec3f genDir; // generated direction
 				Ray secondRay; // second Ray
 				Isect secondRayIsect; // second intersection
-				float ps;
-				float pd;
+				float ps; // prob of choosing the diffuse component
+				float pd; // prob of choosing the specular comp.
 
 				// generate new direction
 				createSecondRay(mat, genDir, secondRay, secondRayIsect, frame, wog, surfPt, normal, pd, ps);
 
+				// calculate pdf
 				pdfBrdf = mat.evalBrdfPdf(wog, genDir, normal);
 
 				//////////////////////////////////////////////
@@ -188,7 +184,7 @@ public:
 					thrput *= (thrputUpdate / survivalProb);
 
 					prevRay = ray;
-					ray.org = surfPt + genDir * EPS_RAY;
+					ray.org = surfPt + genDir * EPS_RAY; // a little offset
 					ray.dir = genDir;
 				}
 				else
@@ -203,8 +199,7 @@ public:
 
 			} // end while loop
 
-			
-
+		
 			mFramebuffer.AddColor(sample, LoDirect); // finally add the information to the image
 
 			/*
@@ -262,7 +257,5 @@ public:
 		return (fPdf) / (fPdf + gPdf);
 	}
 
-
-
-	Rng              mRng;
+	Rng mRng;
 };

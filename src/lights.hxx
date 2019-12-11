@@ -199,7 +199,8 @@ public:
 		return mBackgroundColor * cosTheta * (2 * PI_F);
 	}
 
-	virtual float getPDF(float lightDist, Vec3f wig) const
+	// virtual float getPDF(float lightDist, Vec3f wig) const
+	virtual float getPDF() const
 	{
 		return (1 / 4 * PI_F);
 	}

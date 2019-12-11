@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClInclude Include="src\camera.hxx" />
     <ClInclude Include="src\config.hxx" />
+    <ClInclude Include="src\directillum.hxx" />
     <ClInclude Include="src\eyelight.hxx" />
     <ClInclude Include="src\framebuffer.hxx" />
     <ClInclude Include="src\geometry.hxx" />

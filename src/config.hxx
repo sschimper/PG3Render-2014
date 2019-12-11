@@ -12,6 +12,7 @@
 #include "scene.hxx"
 #include "eyelight.hxx"
 #include "pathtracer.hxx"
+#include "directillum.hxx"
 
 #include <omp.h>
 #include <string>
@@ -24,32 +25,64 @@ struct Config
     enum Algorithm
     {
         kEyeLight,
+		kDirectIllum,
         kPathTracing,
 		kAlgorithmMax
     };
+
+	enum ParticipatingMediaType
+	{
+		kGlobalHomogenious,
+		kIsotropic,
+		kPartMedMax
+	};
 
     static const char* GetName(Algorithm aAlgorithm)
     {
         static const char* algorithmNames[7] =
         {
             "eye light",
+			"direct illumination",
             "path tracing"
         };
 
-        if(aAlgorithm < 0 || aAlgorithm > 1)
+        if(aAlgorithm < 0 || aAlgorithm > 2) // debug
             return "unknown algorithm";
 
         return algorithmNames[aAlgorithm];
     }
 
+	static const char* GetName(ParticipatingMediaType aPartMed)
+	{
+		static const char* partMedNames[7] =
+		{
+			"global homogenious",
+			"isotropic"
+		};
+
+		if (aPartMed > 1)
+			return "unknown volume type";
+
+		return partMedNames[aPartMed];
+	}
+
     static const char* GetAcronym(Algorithm aAlgorithm)
     {
-        static const char* algorithmNames[7] = { "el", "pt" };
+        static const char* algorithmNames[7] = { "el", "di", "pt" };
 
-        if(aAlgorithm < 0 || aAlgorithm > 1)
+        if(aAlgorithm < 0 || aAlgorithm > 2)
             return "unknown";
         return algorithmNames[aAlgorithm];
     }
+
+	static const char* GetAcronym(ParticipatingMediaType aPartMed)
+	{
+		static const char* partMedNames[7] = {  "gh", "iso" };
+
+		if (aPartMed < 0 || aPartMed > 1)
+			return "unknown";
+		return partMedNames[aPartMed];
+	}
 
     const Scene *mScene;
     Algorithm   mAlgorithm;
@@ -75,6 +108,8 @@ AbstractRenderer* CreateRenderer(
     {
     case Config::kEyeLight:
         return new EyeLight(scene, aSeed);
+	case Config::kDirectIllum:
+		return new DirectIllum(scene, aSeed);
     case Config::kPathTracing:
         return new PathTracer(scene, aSeed);
     default:
@@ -137,19 +172,26 @@ void PrintRngWarning()
 void PrintHelp(const char *argv[])
 {
     printf("\n");
-    printf("Usage: %s [ -s <scene_id> | -a <algorithm> |\n", argv[0]);
-    printf("           -t <time> | -i <iteration> | -o <output_name> | --report ]\n\n");
+    printf("Usage: %s [ -s <scene_id> >| -v <volume_type> | -a <algorithm> |\n", argv[0]);
+    printf("          | -t <time> | -i <iteration> | -o <output_name> | --report ]\n\n");
     printf("    -s  Selects the scene (default 0):\n");
 
     for(int i = 0; i < SizeOfArray(g_SceneConfigs); i++)
         printf("          %d    %s\n", i, Scene::GetSceneName(g_SceneConfigs[i]).c_str());
 
-    printf("    -a  Selects the rendering algorithm (default vcm):\n");
+    printf("    -a  Selects the rendering algorithm (default pt):\n");
 
     for(int i = 0; i < (int)Config::kAlgorithmMax; i++)
         printf("          %-3s  %s\n",
             Config::GetAcronym(Config::Algorithm(i)),
             Config::GetName(Config::Algorithm(i)));
+
+	printf("    -v  Optinally selects participating media type (default none)\n");
+
+	for (int i = 0; i < (int)Config::kPartMedMax; i++)
+		printf("          %-3s  %s\n",
+			Config::GetAcronym(Config::ParticipatingMediaType(i)),
+			Config::GetName(Config::ParticipatingMediaType(i)));
 
     printf("    -t  Number of seconds to run the algorithm\n");
     printf("    -i  Number of iterations to run the algorithm (default 1)\n");
