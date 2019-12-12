@@ -15,6 +15,7 @@
 #include "directillum.hxx"
 
 #include <omp.h>
+#include <iostream>
 #include <string>
 #include <set>
 #include <sstream>
@@ -167,6 +168,40 @@ void PrintRngWarning()
     printf("Consider setting up for C++11.\n");
     printf("Visual Studio 2010, and g++ 4.6.3 and later work.\n\n");
 #endif
+}
+
+// code taken from here: http://www.cplusplus.com/forum/general/58945/
+void PrintHeading()
+{
+	std::cout << "" << std::endl;
+	std::cout << "Welcome to" << std::endl;
+	std::cout << "" << std::endl;
+
+	std::string getFileContents(std::ifstream&);
+	std::ifstream Reader("Heading.txt");             //Open file
+	std::string Lines = "";        //All lines
+
+	if (Reader)                      //Check if everything is good
+	{
+		while (Reader.good())
+		{
+			std::string TempLine;                  //Temp line
+			std::getline(Reader, TempLine);        //Get temp line
+			TempLine += "\n";                      //Add newline character
+			Lines += TempLine;                     //Add newline
+		}
+	}
+	else                           // Return error
+	{
+		std::cout << "ERROR File does not exist." << std::endl;;
+	}
+	std::cout << Lines << std::endl;               // Print it to the screen
+
+	Reader.close(); // Close file
+
+	std::cout << "" << std::endl;
+	std::cout << "Type 'PG3Render.exe -h' to get an overview of the whole functionality of PG3Render. " << std::endl;
+	std::cout << "" << std::endl;
 }
 
 void PrintHelp(const char *argv[])

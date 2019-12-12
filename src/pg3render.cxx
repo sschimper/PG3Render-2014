@@ -140,6 +140,9 @@ float render(
 
 int main(int argc, const char *argv[])
 {
+	// Print heading
+	PrintHeading();
+
     // Warns when not using C++11 Mersenne Twister
     PrintRngWarning();
 
