@@ -68,7 +68,8 @@ public:
 	Vec3f rndHemiCosN(float &r1, float &r2) const
 	{
 		float zExp = 1.f / (mPhongExponent + 1);
-		float sqrtTerm = std::sqrt(std::max(0.f, 1.f - pow(r2, 2 * zExp)));
+		// float sqrtTerm = std::sqrt(std::max(0.f, 1.f - pow(r2, 2 * zExp))); // ERROR on LINUX
+		float sqrtTerm = 1.0f;
 		float phi = 2 * PI_F * r1;
 
 		return Vec3f(cos(phi) * sqrtTerm, sin(phi) * sqrtTerm, pow(r2, zExp));

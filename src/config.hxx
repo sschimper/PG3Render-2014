@@ -178,7 +178,8 @@ void PrintHeading()
 	std::cout << "" << std::endl;
 
 	std::string getFileContents(std::ifstream&);
-	std::ifstream Reader("../../heading.txt");             //Open file
+	// std::ifstream Reader("../../heading.txt"); // for windows
+    std::ifstream Reader("../heading.txt");   //Open file // for linux
 	std::string Lines = "";        //All lines
 
 	if (Reader)                      //Check if everything is good
