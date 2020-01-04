@@ -78,7 +78,7 @@ public:
 					// calculate LoDirect and return
 					if (firstIsec)
 					{
-						const auto firstIsectLight = mScene.GetLightPtr(isect.lightID);
+						const auto* firstIsectLight = mScene.GetLightPtr(isect.lightID);
 						assert(firstIsectLight != 0);
 						LoDirect += thrput * firstIsectLight->getRadiance();
 						break;
@@ -102,7 +102,7 @@ public:
 				//////////////////////////////////////////////
 				//			Area Light Sampling				//
 				//////////////////////////////////////////////
-
+				/*
 				// initialize variables for the prob of light sampling or brdf sampling
 				float lightSamplingPdfLight;
 				float lightSamplingPdfBrdf;
@@ -115,7 +115,7 @@ public:
 
 					Vec3f wig;
 					float lightDist;
-					Vec3f illum = light->sampleIllumination(mRng.GetVec3f(), surfPt, frame, wig, lightDist); // debug
+					Vec3f illum = light->sampleIllumination(mRng.GetVec3f(), surfPt, frame, wig, lightDist); 
 
 					// if the scene is a "point light scene", always do
 					// light sampling
@@ -143,7 +143,7 @@ public:
 						}
 					}
 				}
-
+				*/
 				//////////////////////////////////////////////
 				//			Area Light Sampling	 end		//
 				//////////////////////////////////////////////

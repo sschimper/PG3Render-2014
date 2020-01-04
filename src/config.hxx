@@ -178,8 +178,7 @@ void PrintHeading()
 	std::cout << "" << std::endl;
 
 	std::string getFileContents(std::ifstream&);
-	// std::ifstream Reader("../../heading.txt"); // for windows
-    std::ifstream Reader("../heading.txt");   //Open file // for linux
+	std::ifstream Reader("Heading.txt");             //Open file
 	std::string Lines = "";        //All lines
 
 	if (Reader)                      //Check if everything is good
@@ -248,7 +247,7 @@ void ParseCommandline(int argc, const char *argv[], Config &oConfig)
     oConfig.mBaseSeed      = 1234;
     oConfig.mMaxPathLength = 10;
     oConfig.mMinPathLength = 0;
-    oConfig.mResolution    = Vec2i(300, 300); //  Vec2i(512, 512);
+    oConfig.mResolution    = Vec2i(512, 512);
     //oConfig.mFramebuffer   = NULL; // this is never set by any parameter
 
     int sceneID    = 0; // default 0
