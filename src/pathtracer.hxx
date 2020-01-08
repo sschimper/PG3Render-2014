@@ -57,7 +57,7 @@ public:
 						float pdfLightSampling = mScene.GetBackground()->getPDF();
 						float weightBRDFSampling = getBalanceHeuristic(pdfBrdf, pdfLightSampling);
 						Vec3f radiance = mScene.GetBackground()->mBackgroundColor;
-						LoDirect += radiance * weightBRDFSampling * thrput;
+						LoDirect += radiance *  weightBRDFSampling *  thrput;
 					}
 					break;
 				}
@@ -83,14 +83,14 @@ public:
 						LoDirect += thrput * firstIsectLight->getRadiance();
 						break;
 					}
-
+					
 					const AbstractLight *abstLight = mScene.GetLightPtr(isect.lightID);
 					float pdfLightSampling = abstLight->getPDF(isect.dist, ray.dir);
 					float weightBRDFSampling;
-					weightBRDFSampling = getBalanceHeuristic(pdfBrdf, pdfLightSampling); 
+					weightBRDFSampling = getBalanceHeuristic(pdfBrdf, pdfLightSampling);
 
-					float cosTheta = Dot(normal, ray.dir);
-					LoDirect += ((abstLight->getRadiance() * weightBRDFSampling)) * thrput;
+					// float cosTheta = Dot(normal, ray.dir);
+					LoDirect += abstLight->getRadiance() * weightBRDFSampling *  thrput;
 					break;
 				}
 
@@ -102,7 +102,7 @@ public:
 				//////////////////////////////////////////////
 				//			Area Light Sampling				//
 				//////////////////////////////////////////////
-				/*
+				
 				// initialize variables for the prob of light sampling or brdf sampling
 				float lightSamplingPdfLight;
 				float lightSamplingPdfBrdf;
@@ -143,7 +143,7 @@ public:
 						}
 					}
 				}
-				*/
+				
 				//////////////////////////////////////////////
 				//			Area Light Sampling	 end		//
 				//////////////////////////////////////////////
@@ -236,7 +236,7 @@ public:
 		ps = mat.getMaxElementInVector(mat.mPhongReflectance);
 		float sumPdPs = (pd + ps);
 		pd /= sumPdPs;	 // prob of choosing the diffuse component
-		ps /= sumPdPs;	 // prob of choosing the specular comp.
+		// ps /= sumPdPs;	 // prob of choosing the specular comp.
 
 		float r1 = mRng.GetFloat();
 		float r2 = mRng.GetFloat();

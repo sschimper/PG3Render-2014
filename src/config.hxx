@@ -247,7 +247,7 @@ void ParseCommandline(int argc, const char *argv[], Config &oConfig)
     oConfig.mBaseSeed      = 1234;
     oConfig.mMaxPathLength = 10;
     oConfig.mMinPathLength = 0;
-    oConfig.mResolution    = Vec2i(512, 512);
+	oConfig.mResolution = /* Vec2i(300, 300); // */ Vec2i(512, 512);
     //oConfig.mFramebuffer   = NULL; // this is never set by any parameter
 
     int sceneID    = 0; // default 0
