@@ -4,6 +4,7 @@
 #include <cmath>
 #include "math.hxx"
 #include "ray.hxx"
+#include "embree_util.hxx"
 
 //////////////////////////////////////////////////////////////////////////
 // Geometry

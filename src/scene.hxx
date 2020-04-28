@@ -1,5 +1,7 @@
 #pragma once
 
+#include <embree3/rtcore.h> // embree
+
 #include <vector>
 #include <map>
 #include <cmath>
@@ -8,6 +10,7 @@
 #include "camera.hxx"
 #include "materials.hxx"
 #include "lights.hxx"
+#include "embree_util.hxx"
 
 class Scene
 {
@@ -15,7 +18,9 @@ public:
     Scene() :
         mGeometry(NULL),
         mBackground(NULL)
-    {}
+    {
+
+    }
 
     ~Scene()
     {
@@ -23,6 +28,20 @@ public:
 
         for(size_t i=0; i<mLights.size(); i++)
             delete mLights[i];
+    }
+
+    // set up embree
+    void SetUpEmbree(GeometryList *geometryList) {
+        // embree support
+        if (!__embree_device)
+            __embree_device = rtcNewDevice("");
+
+        RTCScene embree_scene = rtcNewScene(__embree_device);
+
+        for (AbstractGeometry *geom : geometryList) // fix later
+            rtcAttachGeometry(embree_scene, geom->embree_geometry(__embree_device));
+        rtcCommitScene(embree_scene);
+        printf("Embree set and ready\n");
     }
 
     bool Intersect(
@@ -267,6 +286,12 @@ public:
 			geometryList->mGeometry.push_back(new Triangle(lb[0], lb[5], lb[4], 0));
 			geometryList->mGeometry.push_back(new Triangle(lb[5], lb[0], lb[1], 1));
         }
+
+        //////////////////////////////////////////////////////////////////////////
+        // Embree
+
+        if(is_embree_enabled())
+            SetUpEmbree(geometryList);
 
         //////////////////////////////////////////////////////////////////////////
         // Lights

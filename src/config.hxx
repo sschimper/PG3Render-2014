@@ -13,6 +13,7 @@
 #include "eyelight.hxx"
 #include "pathtracer.hxx"
 #include "directillum.hxx"
+#include "embree_util.hxx"
 
 #include <omp.h>
 #include <iostream>
@@ -228,6 +229,7 @@ void PrintHelp(const char *argv[])
 			Config::GetAcronym(Config::ParticipatingMediaType(i)),
 			Config::GetName(Config::ParticipatingMediaType(i)));
 
+    printf("    -e  Flag for enabling embree support (can be omitted if embree support is not desired)\n");
     printf("    -t  Number of seconds to run the algorithm\n");
     printf("    -i  Number of iterations to run the algorithm (default 1)\n");
     printf("    -o  User specified output name, with extension .bmp or .hdr (default .bmp)\n");
@@ -251,6 +253,8 @@ void ParseCommandline(int argc, const char *argv[], Config &oConfig)
     //oConfig.mFramebuffer   = NULL; // this is never set by any parameter
 
     int sceneID    = 0; // default 0
+
+    set_embree_enabled(false); // disable embree by default
 
     // Load arguments
     for(int i=1; i<argc; i++)
@@ -303,6 +307,10 @@ void ParseCommandline(int argc, const char *argv[], Config &oConfig)
                 printf("Invalid <algorithm> argument, please see help (-h)\n");
                 return;
             }
+        }
+        else if(arg == "-e") // embree support
+        {
+            set_embree_enabled(true);
         }
         else if(arg == "-i") // number of iterations to run
         {
