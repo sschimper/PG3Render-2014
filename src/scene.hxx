@@ -19,7 +19,6 @@ public:
         mGeometry(NULL),
         mBackground(NULL)
     {
-
     }
 
     ~Scene()
@@ -28,20 +27,6 @@ public:
 
         for(size_t i=0; i<mLights.size(); i++)
             delete mLights[i];
-    }
-
-    // set up embree
-    void SetUpEmbree(GeometryList *geometryList) {
-        // embree support
-        if (!__embree_device)
-            __embree_device = rtcNewDevice("");
-
-        RTCScene embree_scene = rtcNewScene(__embree_device);
-
-        for (AbstractGeometry *geom : geometryList) // fix later
-            rtcAttachGeometry(embree_scene, geom->embree_geometry(__embree_device));
-        rtcCommitScene(embree_scene);
-        printf("Embree set and ready\n");
     }
 
     bool Intersect(
@@ -141,11 +126,59 @@ public:
 			aMat.mDiffuseReflectance /= 2; // to make it energy conserving
 	}
 
+	// creating a triangle
+	Triangle* CreateTriangleInstance(RTCScene _scene, RTCDevice _device, const Vec3f &p0,
+                                const Vec3f &p1,
+                                const Vec3f &p2,
+                                int         aMatID) {
+
+	    Triangle* triangle = new Triangle(p0, p1, p2, aMatID);
+
+        RTCGeometry _geomTriangle = rtcNewGeometry(_device, RTC_GEOMETRY_TYPE_USER);
+        rtcSetGeometryUserPrimitiveCount(_geomTriangle,1);
+        rtcSetGeometryUserData(_geomTriangle, triangle);
+
+        // intersect
+
+        // add geometry to scene
+        rtcCommitGeometry(_geomTriangle);
+        rtcAttachGeometry(_scene,_geomTriangle);
+        rtcReleaseGeometry(_geomTriangle);
+
+        return triangle;
+	}
+
+    // creating a triangle
+    Sphere* CreateSphereInstance(RTCScene _scene, RTCDevice _device, const Vec3f &aCenter,
+                                 float       aRadius,
+                                 int         aMatID) {
+
+        Sphere* sphere = new Sphere(aCenter, aRadius, aMatID);
+
+        RTCGeometry _geomSphere = rtcNewGeometry(_device, RTC_GEOMETRY_TYPE_USER);
+        rtcSetGeometryUserPrimitiveCount(_geomSphere,1);
+        rtcSetGeometryUserData(_geomSphere, sphere);
+
+        // intersect
+
+        // add geometry to scene
+        rtcCommitGeometry(_geomSphere);
+        rtcAttachGeometry(_scene,_geomSphere);
+        rtcReleaseGeometry(_geomSphere);
+
+        return sphere;
+    }
+
     void LoadCornellBox(
         const Vec2i &aResolution,
         uint aBoxMask = kDefault)
     {
-        mSceneName = GetSceneName(aBoxMask, &mSceneAcronym);
+        // Set up Embree
+        RTCDevice _device = rtcNewDevice(NULL);
+        RTCScene _embreeScene = rtcNewScene(_device);
+
+	    mSceneName = GetSceneName(aBoxMask, &mSceneAcronym);
+
 
         bool light_ceiling = (aBoxMask & kLightCeiling)    != 0;
         bool light_box     = (aBoxMask & kLightBox)        != 0;
@@ -193,6 +226,7 @@ public:
         delete mGeometry;
 
         //////////////////////////////////////////////////////////////////////////
+
         // Cornell box
         Vec3f cb[8] = {
             Vec3f(-1.27029f,  1.30455f, -1.28002f),
@@ -225,7 +259,6 @@ public:
 			// Back wall
 			geometryList->mGeometry.push_back(new Triangle(cb[0], cb[1], cb[2], 5));
 			geometryList->mGeometry.push_back(new Triangle(cb[2], cb[3], cb[0], 5));
-
 
 			// Ceiling
 			if(light_ceiling && !light_box)
@@ -286,12 +319,6 @@ public:
 			geometryList->mGeometry.push_back(new Triangle(lb[0], lb[5], lb[4], 0));
 			geometryList->mGeometry.push_back(new Triangle(lb[5], lb[0], lb[1], 1));
         }
-
-        //////////////////////////////////////////////////////////////////////////
-        // Embree
-
-        if(is_embree_enabled())
-            SetUpEmbree(geometryList);
 
         //////////////////////////////////////////////////////////////////////////
         // Lights

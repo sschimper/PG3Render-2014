@@ -6,7 +6,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_CHECK_CXX
   "/home/sebastian/Programs/PG3Render-2014/src/pg3render.cxx" "/home/sebastian/Programs/PG3Render-2014/cmake-build-debug/CMakeFiles/PG3Render_2014.dir/src/pg3render.cxx.o"
   )
-set(CMAKE_CXX_COMPILER_ID "GNU")
+set(CMAKE_CXX_COMPILER_ID "Clang")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH

@@ -1,1 +1,1 @@
-/usr/bin/c++  -g   CMakeFiles/PG3Render_2014.dir/src/pg3render.cxx.o  -o PG3Render_2014 
+/usr/bin/clang++-9  -g  -rdynamic CMakeFiles/PG3Render_2014.dir/src/pg3render.cxx.o  -o PG3Render_2014  -lembree3 -lomp -lpthread 
