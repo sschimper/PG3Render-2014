@@ -23,6 +23,10 @@ public:
 		const int resX = int(mScene.mCamera.mResolution.x);
 		const int resY = int(mScene.mCamera.mResolution.y);
 
+		// create embree intersection context
+		RTCIntersectContext _context;
+		rtcInitIntersectContext(&_context);
+
 		for (int pixID = 0; pixID < resX * resY; pixID++)
 		{
 			//////////////////////////////////////////////////////////////////////////
