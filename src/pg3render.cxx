@@ -192,6 +192,7 @@ int main(int argc, const char *argv[])
         printf("Used unknown extension %s\n", extension.c_str());
 
     // Scene cleanup
+    config.mScene->CleanUpScene();
     delete config.mScene;
 
     // debug

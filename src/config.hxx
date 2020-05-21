@@ -254,8 +254,6 @@ void ParseCommandline(int argc, const char *argv[], Config &oConfig)
 
     int sceneID    = 0; // default 0
 
-    set_embree_enabled(false); // disable embree by default
-
     // Load arguments
     for(int i=1; i<argc; i++)
     {
@@ -307,10 +305,6 @@ void ParseCommandline(int argc, const char *argv[], Config &oConfig)
                 printf("Invalid <algorithm> argument, please see help (-h)\n");
                 return;
             }
-        }
-        else if(arg == "-e") // embree support
-        {
-            set_embree_enabled(true);
         }
         else if(arg == "-i") // number of iterations to run
         {

@@ -174,8 +174,8 @@ public:
         uint aBoxMask = kDefault)
     {
         // Set up Embree
-        RTCDevice _device = rtcNewDevice(NULL);
-        RTCScene _embreeScene = rtcNewScene(_device);
+        _device = rtcNewDevice(NULL);
+        _embreeScene = rtcNewScene(_device);
 
 	    mSceneName = GetSceneName(aBoxMask, &mSceneAcronym);
 
@@ -243,33 +243,33 @@ public:
         mGeometry = geometryList;
 
 		// Floor
-		geometryList->mGeometry.push_back(new Triangle(cb[0], cb[4], cb[5], 2));
-		geometryList->mGeometry.push_back(new Triangle(cb[5], cb[1], cb[0], 2));
+		geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[0], cb[4], cb[5], 2));
+		geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[5], cb[1], cb[0], 2));
 
 		if(aBoxMask & kWalls)
 		{
 			// Left wall
-			geometryList->mGeometry.push_back(new Triangle(cb[3], cb[7], cb[4], 3));
-			geometryList->mGeometry.push_back(new Triangle(cb[4], cb[0], cb[3], 3));
+			geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[3], cb[7], cb[4], 3));
+			geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[4], cb[0], cb[3], 3));
 
 			// Right wall
-			geometryList->mGeometry.push_back(new Triangle(cb[1], cb[5], cb[6], 4));
-			geometryList->mGeometry.push_back(new Triangle(cb[6], cb[2], cb[1], 4));
+			geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[1], cb[5], cb[6], 4));
+			geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[6], cb[2], cb[1], 4));
 
 			// Back wall
-			geometryList->mGeometry.push_back(new Triangle(cb[0], cb[1], cb[2], 5));
-			geometryList->mGeometry.push_back(new Triangle(cb[2], cb[3], cb[0], 5));
+			geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[0], cb[1], cb[2], 5));
+			geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[2], cb[3], cb[0], 5));
 
 			// Ceiling
 			if(light_ceiling && !light_box)
 			{
-				geometryList->mGeometry.push_back(new Triangle(cb[2], cb[6], cb[7], 0));
-				geometryList->mGeometry.push_back(new Triangle(cb[7], cb[3], cb[2], 1));
+				geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[2], cb[6], cb[7], 0));
+				geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[7], cb[3], cb[2], 1));
 			}
 			else
 			{
-				geometryList->mGeometry.push_back(new Triangle(cb[2], cb[6], cb[7], 2));
-				geometryList->mGeometry.push_back(new Triangle(cb[7], cb[3], cb[2], 2));
+				geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[2], cb[6], cb[7], 2));
+				geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,cb[7], cb[3], cb[2], 2));
 			}
 		}
 
@@ -284,8 +284,8 @@ public:
 			Vec3f leftBallCenter  = leftWallCenter  + Vec3f(2.f * xlen / 7.f, 0, 0);
 			Vec3f rightBallCenter = rightWallCenter - Vec3f(2.f * xlen / 7.f, -xlen/4, 0);
 
-			geometryList->mGeometry.push_back(new Sphere(leftBallCenter,  smallRadius, 6));
-			geometryList->mGeometry.push_back(new Sphere(rightBallCenter, smallRadius, 7));
+			geometryList->mGeometry.push_back(CreateSphereInstance(_embreeScene, _device, leftBallCenter,  smallRadius, 6));
+			geometryList->mGeometry.push_back(CreateSphereInstance(_embreeScene, _device, rightBallCenter, smallRadius, 7));
 		}
 
         //////////////////////////////////////////////////////////////////////////
@@ -304,20 +304,20 @@ public:
         if(light_box && !light_ceiling)
         {
             // Back wall
-            geometryList->mGeometry.push_back(new Triangle(lb[0], lb[2], lb[1], 5));
-            geometryList->mGeometry.push_back(new Triangle(lb[2], lb[0], lb[3], 5));
+            geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,lb[0], lb[2], lb[1], 5));
+            geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,lb[2], lb[0], lb[3], 5));
             // Left wall
-            geometryList->mGeometry.push_back(new Triangle(lb[3], lb[4], lb[7], 5));
-            geometryList->mGeometry.push_back(new Triangle(lb[4], lb[3], lb[0], 5));
+            geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,lb[3], lb[4], lb[7], 5));
+            geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,lb[4], lb[3], lb[0], 5));
             // Right wall
-            geometryList->mGeometry.push_back(new Triangle(lb[1], lb[6], lb[5], 5));
-            geometryList->mGeometry.push_back(new Triangle(lb[6], lb[1], lb[2], 5));
+            geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,lb[1], lb[6], lb[5], 5));
+            geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,lb[6], lb[1], lb[2], 5));
             // Front wall
-            geometryList->mGeometry.push_back(new Triangle(lb[4], lb[5], lb[6], 5));
-            geometryList->mGeometry.push_back(new Triangle(lb[6], lb[7], lb[4], 5));
+            geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,lb[4], lb[5], lb[6], 5));
+            geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,lb[6], lb[7], lb[4], 5));
 			// Floor
-			geometryList->mGeometry.push_back(new Triangle(lb[0], lb[5], lb[4], 0));
-			geometryList->mGeometry.push_back(new Triangle(lb[5], lb[0], lb[1], 1));
+			geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,lb[0], lb[5], lb[4], 0));
+			geometryList->mGeometry.push_back(CreateTriangleInstance(_embreeScene, _device,lb[5], lb[0], lb[1], 1));
         }
 
         //////////////////////////////////////////////////////////////////////////
@@ -453,6 +453,12 @@ public:
         return name;
     }
 
+    // release empree scene and device
+    void CleanUpScene() const {
+	    rtcReleaseDevice(_device);
+	    rtcReleaseScene(_embreeScene);
+	}
+
 public:
 
     AbstractGeometry      *mGeometry;
@@ -465,4 +471,7 @@ public:
 
     std::string           mSceneName;
     std::string           mSceneAcronym;
+
+    RTCDevice _device;
+    RTCScene _embreeScene;
 };
